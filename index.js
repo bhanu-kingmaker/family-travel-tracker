@@ -8,7 +8,7 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5500;
 
-// Connect to the first database using individual environment variables
+// Connect to the single database using environment variables
 const db = new pg.Client({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
@@ -20,19 +20,6 @@ const db = new pg.Client({
   },
 });
 db.connect();
-
-// Connect to the second database using a different set of individual environment variables
-const db1 = new pg.Client({
-  user: process.env.DB1_USER,
-  host: process.env.DB1_HOST,
-  database: process.env.DB1_NAME,
-  password: process.env.DB1_PASS,
-  port: process.env.DB1_PORT,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-});
-db1.connect();
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
@@ -79,7 +66,7 @@ app.post("/add", async (req, res) => {
   const currentUser = await getCurrentUser();
 
   try {
-    const result = await db1.query(
+    const result = await db.query( // changed from db1.query to db.query
       "SELECT country_code FROM countries WHERE LOWER(country_name) LIKE '%' || $1 || '%';",
       [input.toLowerCase()]
     );
