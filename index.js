@@ -1,23 +1,16 @@
 import express from "express";
 import bodyParser from "body-parser";
 import pg from "pg";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 5500;
+const port = 5500;
 
-// Connect to the single database using environment variables
 const db = new pg.Client({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASS,
-  port: process.env.DB_PORT,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  user: "postgres",
+  host: "localhost",
+  database: "school",
+  password: "9347897640",
+  port: 5432,
 });
 db.connect();
 
@@ -25,48 +18,34 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
 let currentUserId = 1;
+
 let users = [
   { id: 1, name: "Angela", color: "teal" },
   { id: 2, name: "Jack", color: "powderblue" },
 ];
 
 async function checkVisisted() {
-  const result = await db.query(
-    "SELECT country_code FROM visited_countries JOIN users ON users.id=user_id WHERE user_id=$1;",
-    [currentUserId]
-  );
+  const result = await db.query("SELECT country_code FROM visited_countries");
   let countries = [];
-  console.log(result.rows);
   result.rows.forEach((country) => {
     countries.push(country.country_code);
   });
   return countries;
 }
-
-async function getCurrentUser() {
-  const result = await db.query("SELECT * FROM users");
-  users = result.rows;
-  console.log(users);
-  return users.find((user) => user.id == currentUserId);
-}
-
 app.get("/", async (req, res) => {
   const countries = await checkVisisted();
-  const currentUser = await getCurrentUser();
   res.render("index.ejs", {
     countries: countries,
     total: countries.length,
     users: users,
-    color: currentUser.color,
+    color: "teal",
   });
 });
-
 app.post("/add", async (req, res) => {
   const input = req.body["country"];
-  const currentUser = await getCurrentUser();
 
   try {
-    const result = await db.query( // changed from db1.query to db.query
+    const result = await db.query(
       "SELECT country_code FROM countries WHERE LOWER(country_name) LIKE '%' || $1 || '%';",
       [input.toLowerCase()]
     );
@@ -75,8 +54,8 @@ app.post("/add", async (req, res) => {
     const countryCode = data.country_code;
     try {
       await db.query(
-        "INSERT INTO visited_countries (country_code, user_id) VALUES ($1, $2)",
-        [countryCode, currentUser.id]
+        "INSERT INTO visited_countries (country_code) VALUES ($1)",
+        [countryCode]
       );
       res.redirect("/");
     } catch (err) {
@@ -86,23 +65,11 @@ app.post("/add", async (req, res) => {
     console.log(err);
   }
 });
-app.post("/user", async (req, res) => {
-  if (req.body.add === 'new') {
-    res.render('new.ejs');
-  } else {
-    currentUserId = req.body.user;
-    res.redirect('/');
-  }
-});
+app.post("/user", async (req, res) => {});
 
 app.post("/new", async (req, res) => {
-  const name = req.body.name;
-  const color = req.body.color;
-
-  const result = await db.query('INSERT INTO users (name,color) VALUES($1,$2) RETURNING *;', [name, color]);
-  const id = result.rows[0].id;
-  currentUserId = id;
-  res.redirect('/');
+  //Hint: The RETURNING keyword can return the data that was inserted.
+  //https://www.postgresql.org/docs/current/dml-returning.html
 });
 
 app.listen(port, () => {
