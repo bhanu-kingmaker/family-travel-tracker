@@ -390,10 +390,17 @@
   </h2>
     <script>
   const country_codes = <%- JSON.stringify(countries) %>;
+  const highlightColor = "<%= color %>";
+
   console.log("Country codes:", country_codes);
+
   country_codes.forEach(code => {
     const el = document.getElementById(code);
-    if (el) el.style.fill = "<%= color %>";
+    if (el) {
+      el.style.fill = highlightColor;
+    } else {
+      console.warn(`No element found for country code: ${code}`);
+    }
   });
 </script>
 </body>
