@@ -1,16 +1,19 @@
 import express from "express";
 import bodyParser from "body-parser";
 import pg from "pg";
+import dotenv from "dotenv";
+
+dotenv.config(); // Load .env variables
 
 const app = express();
 const port = 5500;
 
 const db = new pg.Client({
-  user: "postgres",
-  host: "localhost",
-  database: "school",
-  password: "9347897640",
-  port: 5432,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASS,
+  port: process.env.DB_PORT,
 });
 db.connect();
 
@@ -32,6 +35,7 @@ async function checkVisisted() {
   });
   return countries;
 }
+
 app.get("/", async (req, res) => {
   const countries = await checkVisisted();
   res.render("index.ejs", {
@@ -41,6 +45,7 @@ app.get("/", async (req, res) => {
     color: "teal",
   });
 });
+
 app.post("/add", async (req, res) => {
   const input = req.body["country"];
 
@@ -65,6 +70,7 @@ app.post("/add", async (req, res) => {
     console.log(err);
   }
 });
+
 app.post("/user", async (req, res) => {});
 
 app.post("/new", async (req, res) => {
